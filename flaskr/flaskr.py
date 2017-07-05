@@ -1,14 +1,21 @@
 import os
-import time
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import sqlite3 as sql
 from datetime import datetime,timedelta
-from flask import Flask, request, session, g, redirect, url_for, abort, \
-     render_template, flash
+from flask import Flask, request, session, g, redirect, url_for,render_template, flash
+import sys
 
-app = Flask(__name__) # create the application instance :)
+# add your project directory to the sys.path
+project_home = u'/home/tsedwards17/golfpool/flaskr'
+if project_home not in sys.path:
+    sys.path = [project_home] + sys.path
+app = Flask(__name__)
+# import flask app but need to call it "application" for WSGI to work
+# from flaskr import app as application
+
+ # create the application instance :)
 app.config.from_object(__name__) # load config from this file , flaskr.py
 
 # Load default config and override config from an environment variable
@@ -68,7 +75,7 @@ def show_entries():
     	pos = soup.findAll('td',{'class':'position'})
     	to_par = soup.findAll('td',{'class':'relativeScore'})
     	column_headers = ['POS','PLAYER','TO_PAR','THRU']
-    	leaderboard = [] 
+    	leaderboard = []
     	for x in range(0,len(to_par)):
     		leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
     	df = pd.DataFrame(leaderboard,columns = column_headers)
@@ -133,11 +140,11 @@ def add_entry():
 	cur2 = db.execute('select golfers from golfers where top20 > 19 order by golfers asc')
 	not20 = [dict(golfer=row[0]) for row in cur2.fetchall()]
 	if request.method == 'POST':
-		if ((request.form.get('golfer1') != request.form.get('golfer2')) 
-			and (request.form.get('golfer1') != request.form.get('golfer3')) 
+		if ((request.form.get('golfer1') != request.form.get('golfer2'))
+			and (request.form.get('golfer1') != request.form.get('golfer3'))
 			and (request.form.get('golfer2') != request.form.get('golfer3'))
-			and (request.form.get('golfer4') != request.form.get('golfer5')) 
-			and (request.form.get('golfer4') != request.form.get('golfer6')) 
+			and (request.form.get('golfer4') != request.form.get('golfer5'))
+			and (request.form.get('golfer4') != request.form.get('golfer6'))
 			and (request.form.get('golfer5') != request.form.get('golfer6'))
 			and (request.form.get('golfer1') != '')
 			and (request.form.get('golfer2') != '')
