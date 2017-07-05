@@ -127,7 +127,8 @@ def show_entries():
     				Golfer6=row[12],
     				Score6=int(row[13]),
     				Birdies=int(row[14]),
-    				raw_total=row[15]) for row in cur.fetchall()]
+    				raw_total=row[15],
+    				position=int(row[0])) for row in cur.fetchall()]
 
     return render_template('show_entries.html', entries=entries)
 
