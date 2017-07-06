@@ -62,6 +62,7 @@ def close_db(error):
 @app.route('/')
 def show_entries():
     db = get_db()
+    # db.execute('delete from inputs,golfers') # for when starting new tournament
     lasttime = db.execute('select * from datetime').fetchone()[0]
     lasttime = datetime.strptime(lasttime,'%Y-%m-%d %H:%M:%S.%f')
     nowtime = datetime.today()
@@ -79,6 +80,21 @@ def show_entries():
     	for x in range(0,len(to_par)):
     		leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
     	df = pd.DataFrame(leaderboard,columns = column_headers)
+
+    	# Run once to get golfers populated in golfers table
+    	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
+    	top20page = requests.get(top20url)
+    	top20soup = BeautifulSoup(top20page.content,'html.parser')
+    	names = top20soup.findAll('td',{'class':'name'})
+    	rankings = []
+    	for x in range(0,len(names)):
+    	    rankings.append([str(names[x].getText()),int(x+1)])
+    	rank_dict = dict(rankings)
+    	golfers = df.drop(['POS','TO_PAR','THRU'],1)
+    	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
+    	golfers.to_sql('golfers',db,if_exists = 'replace')
+
+
     	df['POS'] = df['POS'].str.replace('T','')
     	df['TO_PAR']=df['TO_PAR'].str.replace('E','0')
     	df = df.convert_objects(convert_numeric=True)
@@ -134,11 +150,10 @@ def show_entries():
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_entry():
-	error = None
 	db = get_db()
-	cur = db.execute('select golfers from golfers where top20 < 20')
+	cur = db.execute('select PLAYER from golfers where LIMIT 20 order by RANK asc')
 	top20 = [dict(golfer=row[0]) for row in cur.fetchall()]
-	cur2 = db.execute('select golfers from golfers where top20 > 19 order by golfers asc')
+	cur2 = db.execute('select PLAYER from golfers where OFFSET 20 order by RANK asc')
 	not20 = [dict(golfer=row[0]) for row in cur2.fetchall()]
 	if request.method == 'POST':
 		if ((request.form.get('golfer1') != request.form.get('golfer2'))
