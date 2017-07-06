@@ -68,7 +68,7 @@ def show_entries():
     nowtime = datetime.today()
     delt = nowtime - lasttime
     if delt > timedelta(0,5):
-    	url = "http://www.espn.com/golf/leaderboard?tournamentId=3068" #3066 - US Open
+    	url = "http://www.espn.com/golf/leaderboard?tournamentId=2727" #3066 - US Open
     	page = requests.get(url)
     	soup = BeautifulSoup(page.content,'html.parser')
     	names = soup.findAll('a',{'class':'full-name'})
@@ -81,20 +81,20 @@ def show_entries():
     		leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
     	df = pd.DataFrame(leaderboard,columns = column_headers)
 
-    # 	# Run once to get golfers populated in golfers table
-    # 	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
-    # 	top20page = requests.get(top20url)
-    # 	top20soup = BeautifulSoup(top20page.content,'html.parser')
-    # 	names = top20soup.findAll('td',{'class':'name'})
-    # 	rankings = []
-    # 	for x in range(0,len(names)):
-    # 	    rankings.append([str(names[x].getText()),int(x+1)])
-    # 	rank_dict = dict(rankings)
-    # 	golfers = df.drop(['POS','TO_PAR','THRU'],1)
-    # 	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
-    # 	golfers = golfers.sort_values('RANK',ascending=True)
-    # 	golfers.to_sql('golfers',db,if_exists = 'replace')
-    # 	db.commit()
+    	# Run once to get golfers populated in golfers table
+    	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
+    	top20page = requests.get(top20url)
+    	top20soup = BeautifulSoup(top20page.content,'html.parser')
+    	names = top20soup.findAll('td',{'class':'name'})
+    	rankings = []
+    	for x in range(0,len(names)):
+    	    rankings.append([str(names[x].getText()),int(x+1)])
+    	rank_dict = dict(rankings)
+    	golfers = df.drop(['POS','TO_PAR','THRU'],1)
+    	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
+    	golfers = golfers.sort_values('RANK',ascending=True)
+    	golfers.to_sql('golfers',db,if_exists = 'replace')
+    	db.commit()
 
 
     	df['POS'] = df['POS'].str.replace('T','')
@@ -154,9 +154,11 @@ def show_entries():
 def add_entry():
 	db = get_db()
 	cur = db.execute('select PLAYER from golfers')
-	player_list = [dict(golfer=row[0]) for row in cur.fetchall()]
-	top20 = list(player_list[:20]).sort()
-	not20 = list(player_list[20:]).sort()
+	df_top20 = pd.DataFrame(cur.fetchall(),columns=['name'])
+	top20 = df_top20['name'].tolist()[:20]
+	not20 = sorted(df_top20['name'].tolist()[20:])
+# 	top20 = list(player_list[:20]).sort()
+# 	not20 = list(player_list[20:]).sort()
 # 	cur2 = db.execute('select PLAYER from golfers OFFSET 20')
 # 	not20 = [dict(golfer=row[0]) for row in cur2.fetchall()]
 	if request.method == 'POST':
