@@ -81,18 +81,20 @@ def show_entries():
     		leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
     	df = pd.DataFrame(leaderboard,columns = column_headers)
 
-    	# Run once to get golfers populated in golfers table
-    	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
-    	top20page = requests.get(top20url)
-    	top20soup = BeautifulSoup(top20page.content,'html.parser')
-    	names = top20soup.findAll('td',{'class':'name'})
-    	rankings = []
-    	for x in range(0,len(names)):
-    	    rankings.append([str(names[x].getText()),int(x+1)])
-    	rank_dict = dict(rankings)
-    	golfers = df.drop(['POS','TO_PAR','THRU'],1)
-    	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
-    	golfers.to_sql('golfers',db,if_exists = 'replace')
+    # 	# Run once to get golfers populated in golfers table
+    # 	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
+    # 	top20page = requests.get(top20url)
+    # 	top20soup = BeautifulSoup(top20page.content,'html.parser')
+    # 	names = top20soup.findAll('td',{'class':'name'})
+    # 	rankings = []
+    # 	for x in range(0,len(names)):
+    # 	    rankings.append([str(names[x].getText()),int(x+1)])
+    # 	rank_dict = dict(rankings)
+    # 	golfers = df.drop(['POS','TO_PAR','THRU'],1)
+    # 	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
+    # 	golfers = golfers.sort_values('RANK',ascending=True)
+    # 	golfers.to_sql('golfers',db,if_exists = 'replace')
+    # 	db.commit()
 
 
     	df['POS'] = df['POS'].str.replace('T','')
@@ -151,10 +153,12 @@ def show_entries():
 @app.route('/add', methods=['GET', 'POST'])
 def add_entry():
 	db = get_db()
-	cur = db.execute('select PLAYER from golfers where LIMIT 20 order by RANK asc')
-	top20 = [dict(golfer=row[0]) for row in cur.fetchall()]
-	cur2 = db.execute('select PLAYER from golfers where OFFSET 20 order by RANK asc')
-	not20 = [dict(golfer=row[0]) for row in cur2.fetchall()]
+	cur = db.execute('select PLAYER from golfers')
+	player_list = [dict(golfer=row[0]) for row in cur.fetchall()]
+	top20 = list(player_list[:20]).sort()
+	not20 = list(player_list[20:]).sort()
+# 	cur2 = db.execute('select PLAYER from golfers OFFSET 20')
+# 	not20 = [dict(golfer=row[0]) for row in cur2.fetchall()]
 	if request.method == 'POST':
 		if ((request.form.get('golfer1') != request.form.get('golfer2'))
 			and (request.form.get('golfer1') != request.form.get('golfer3'))
