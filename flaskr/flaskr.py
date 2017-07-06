@@ -6,14 +6,15 @@ import sqlite3 as sql
 from datetime import datetime,timedelta
 from flask import Flask, request, session, g, redirect, url_for,render_template, flash
 import sys
+# # import flask app but need to call it "application" for WSGI to work
+# from flaskr import app as application
 
 # add your project directory to the sys.path
 project_home = u'/home/tsedwards17/golfpool/flaskr'
 if project_home not in sys.path:
     sys.path = [project_home] + sys.path
 app = Flask(__name__)
-# import flask app but need to call it "application" for WSGI to work
-# from flaskr import app as application
+
 
  # create the application instance :)
 app.config.from_object(__name__) # load config from this file , flaskr.py
@@ -62,7 +63,6 @@ def close_db(error):
 @app.route('/')
 def show_entries():
     db = get_db()
-    # db.execute('delete from inputs,golfers') # for when starting new tournament
     lasttime = db.execute('select * from datetime').fetchone()[0]
     lasttime = datetime.strptime(lasttime,'%Y-%m-%d %H:%M:%S.%f')
     nowtime = datetime.today()
@@ -81,20 +81,22 @@ def show_entries():
     		leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
     	df = pd.DataFrame(leaderboard,columns = column_headers)
 
-    	# Run once to get golfers populated in golfers table
-    	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
-    	top20page = requests.get(top20url)
-    	top20soup = BeautifulSoup(top20page.content,'html.parser')
-    	names = top20soup.findAll('td',{'class':'name'})
-    	rankings = []
-    	for x in range(0,len(names)):
-    	    rankings.append([str(names[x].getText()),int(x+1)])
-    	rank_dict = dict(rankings)
-    	golfers = df.drop(['POS','TO_PAR','THRU'],1)
-    	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
-    	golfers = golfers.sort_values('RANK',ascending=True)
-    	golfers.to_sql('golfers',db,if_exists = 'replace')
-    	db.commit()
+
+    #   db.execute('delete from inputs,golfers') # for when starting new tournament
+    # 	# Run once to get golfers populated in golfers table
+    # 	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
+    # 	top20page = requests.get(top20url)
+    # 	top20soup = BeautifulSoup(top20page.content,'html.parser')
+    # 	names = top20soup.findAll('td',{'class':'name'})
+    # 	rankings = []
+    # 	for x in range(0,len(names)):
+    # 	    rankings.append([str(names[x].getText()),int(x+1)])
+    # 	rank_dict = dict(rankings)
+    # 	golfers = df.drop(['POS','TO_PAR','THRU'],1)
+    # 	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
+    # 	golfers = golfers.sort_values('RANK',ascending=True)
+    # 	golfers.to_sql('golfers',db,if_exists = 'replace')
+    # 	db.commit()
 
 
     	df['POS'] = df['POS'].str.replace('T','')
@@ -157,10 +159,6 @@ def add_entry():
 	df_top20 = pd.DataFrame(cur.fetchall(),columns=['name'])
 	top20 = df_top20['name'].tolist()[:20]
 	not20 = sorted(df_top20['name'].tolist()[20:])
-# 	top20 = list(player_list[:20]).sort()
-# 	not20 = list(player_list[20:]).sort()
-# 	cur2 = db.execute('select PLAYER from golfers OFFSET 20')
-# 	not20 = [dict(golfer=row[0]) for row in cur2.fetchall()]
 	if request.method == 'POST':
 		if ((request.form.get('golfer1') != request.form.get('golfer2'))
 			and (request.form.get('golfer1') != request.form.get('golfer3'))
@@ -179,8 +177,16 @@ def add_entry():
 			db.execute('insert into inputs (name, golfer1, golfer2, golfer3, golfer4, golfer5, golfer6, paid, birdies) values (?, ?, ?, ?, ?, ?, ?, ?,?)',[request.form.get('name'), request.form.get('golfer1'), request.form.get('golfer2'),request.form.get('golfer3'),request.form.get('golfer4'),request.form.get('golfer5'),request.form.get('golfer6'),'N',request.form.get('birdies')])
 			db.commit()
 			flash('New entry was successfully posted!')
+		elif ((request.form.get('golfer1') == request.form.get('golfer2')) or (request.form.get('golfer1') == request.form.get('golfer3')) or (request.form.get('golfer2') == request.form.get('golfer3')) or (request.form.get('golfer4') == request.form.get('golfer5')) or (request.form.get('golfer4') == request.form.get('golfer6')) or (request.form.get('golfer5') == request.form.get('golfer6'))):
+		    flash('You cannot pick two of the same golfers.')
+		elif ((request.form.get('golfer1') == '') or (request.form.get('golfer2') == '') or (request.form.get('golfer3') == '') or (request.form.get('golfer4') == '') or (request.form.get('golfer5') == '') or (request.form.get('golfer6') == '')):
+		    flash('One of your golfer slots is blank.')
+		elif request.form.get('name') == '':
+		    flash('Enter your name.')
+		elif request.form.get('birdies') == '':
+		    flash('Enter your birdie number.')
 		else:
-			flash('Fix your entry below.')
+		    flash('Fix your entry below.')
 	return render_template('add.html', top20=top20, not20=not20)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -209,9 +215,19 @@ def admin():
 		db = get_db()
 		for x in paid:
 			db.execute("update inputs set paid = 'Y' where name = ?",(x,))
-		db.commit()
+			db.commit()
 		return redirect(url_for('admin'))
-	return render_template('admin.html',unpaid=unpaid)
+	cur2 = db.execute('select * from inputs')
+	entries = [dict(Name=row[0],
+                    Golfer1=row[1],
+                    Golfer2=row[2],
+                    Golfer3=row[3],
+                    Golfer4=row[4],
+                    Golfer5=row[5],
+                    Golfer6=row[6],
+                    Birdies=int(row[7]),
+                    paid=row[8]) for row in cur2.fetchall()]
+	return render_template('admin.html',unpaid=unpaid, entries=entries)
 
 @app.route('/logout')
 def logout():

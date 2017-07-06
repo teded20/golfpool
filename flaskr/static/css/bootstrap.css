@@ -1607,14 +1607,14 @@ pre code {
     display: none;
 }
 .form-group input[type="checkbox"] + .btn-group > label span:last-child {
-    display: inline-block;   
+    display: inline-block;
 }
 
 .form-group input[type="checkbox"]:checked + .btn-group > label span:first-child {
     display: inline-block;
 }
 .form-group input[type="checkbox"]:checked + .btn-group > label span:last-child {
-    display: none;   
+    display: none;
 }
 .container {
   padding-right: 15px;
@@ -1622,7 +1622,7 @@ pre code {
   /*padding-top: 100px;*/
   margin-right: auto;
   margin-left: auto;
-  margin-top: auto;
+  /*margin-top: auto;*/
   margin-bottom: auto;
 }
 @media (min-width: 768px) {
@@ -1648,7 +1648,7 @@ pre code {
   /*padding-top: 100px;*/
   margin-right: auto;
   margin-left: auto;
-  margin-top: auto;
+  /*margin-top: auto;*/
   margin-bottom: auto;
   background-color: rgba(220,220,220,0.8);
   font-size: 15px;
@@ -6851,4 +6851,4 @@ button.close {
     display: none !important;
   }
 }
-/*# sourceMappingURL=bootstrap.css.map 
+/*# sourceMappingURL=bootstrap.css.map
