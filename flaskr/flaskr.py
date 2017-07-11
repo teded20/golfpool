@@ -104,7 +104,7 @@ def show_entries():
     	df = df.convert_objects(convert_numeric=True)
     	if df.loc[0,'POS'] != df.loc[1,'POS']:
     		df.loc[0,'TO_PAR']=df.loc[0,'TO_PAR']-3
-    	if datetime.today().weekday() > 4:
+    	if (datetime.today().weekday() > 4 or datetime.today().weekday() < 3):
     		df_cut = df.sort_values('POS',ascending=False)
     		df_cut = df_cut[pd.notnull(df_cut['TO_PAR'])]
     		cut_score = int(df_cut.iloc[0]['TO_PAR'] + 10)
