@@ -67,7 +67,7 @@ def show_entries():
     lasttime = datetime.strptime(lasttime,'%Y-%m-%d %H:%M:%S.%f')
     nowtime = datetime.today()
     delt = nowtime - lasttime
-    if delt > timedelta(0,5):
+    if delt < timedelta(0,5):
     	url = "http://www.espn.com/golf/leaderboard?tournamentId=2727" #3066 - US Open
     	page = requests.get(url)
     	soup = BeautifulSoup(page.content,'html.parser')
@@ -79,36 +79,33 @@ def show_entries():
     	leaderboard = []
     	for x in range(0,len(to_par)):
     		leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
-    	df = pd.DataFrame(leaderboard,columns = column_headers)
-
-
-    #   db.execute('delete from inputs,golfers') # for when starting new tournament
-    # 	# Run once to get golfers populated in golfers table
-    # 	top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
-    # 	top20page = requests.get(top20url)
-    # 	top20soup = BeautifulSoup(top20page.content,'html.parser')
-    # 	names = top20soup.findAll('td',{'class':'name'})
-    # 	rankings = []
-    # 	for x in range(0,len(names)):
-    # 	    rankings.append([str(names[x].getText()),int(x+1)])
-    # 	rank_dict = dict(rankings)
-    # 	golfers = df.drop(['POS','TO_PAR','THRU'],1)
-    # 	golfers['RANK'] = golfers.PLAYER.map(rank_dict)
-    # 	golfers = golfers.sort_values('RANK',ascending=True)
-    # 	golfers.to_sql('golfers',db,if_exists = 'replace')
-    # 	db.commit()
-
-
+    	df=pd.DataFrame(leaderboard,columns = column_headers)
+    	df.to_sql('raw_scores',db,if_exists ='replace')
     	df['POS'] = df['POS'].str.replace('T','')
+        # db.execute('delete from inputs,golfers') # for when starting new tournament
+    	# # Run once to get golfers populated in golfers table
+    	#     top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
+    	#     top20page = requests.get(top20url)
+    	#     top20soup = BeautifulSoup(top20page.content,'html.parser')
+    	#     names = top20soup.findAll('td',{'class':'name'})
+    	#     rankings = []
+    	#     for x in range(0,len(names)):
+    	#         rankings.append([str(names[x].getText()),int(x+1)])
+    	#     rank_dict = dict(rankings)
+    	#     golfers = df.drop(['POS','TO_PAR','THRU'],1)
+    	#     golfers['RANK'] = golfers.PLAYER.map(rank_dict)
+    	#     golfers = golfers.sort_values('RANK',ascending=True)
+    	#     golfers.to_sql('golfers',db,if_exists = 'replace')
+    	#     db.commit()
     	df['TO_PAR']=df['TO_PAR'].str.replace('E','0')
     	df = df.convert_objects(convert_numeric=True)
     	if df.loc[0,'POS'] != df.loc[1,'POS']:
-    		df.loc[0,'TO_PAR']=df.loc[0,'TO_PAR']-3
+    	    df.loc[0,'TO_PAR']=df.loc[0,'TO_PAR']-3
     	if (datetime.today().weekday() > 4 or datetime.today().weekday() < 3):
-    		df_cut = df.sort_values('POS',ascending=False)
-    		df_cut = df_cut[pd.notnull(df_cut['TO_PAR'])]
-    		cut_score = int(df_cut.iloc[0]['TO_PAR'] + 10)
-    		df['TO_PAR'] = df['TO_PAR'].fillna(cut_score)
+            df_cut = df.sort_values('POS',ascending=False)
+            df_cut = df_cut[pd.notnull(df_cut['TO_PAR'])]
+            cut_score = int(df_cut.iloc[0]['TO_PAR'] + 10)
+            df['TO_PAR'] = df['TO_PAR'].fillna(cut_score)
     	df = df.drop(['POS','THRU'],1)
     	df.to_sql('scores',db,if_exists ='replace')
     	db.execute('update datetime set last_run = ?',(datetime.today(),))
@@ -131,6 +128,7 @@ def show_entries():
     	scores.sort()
     	total = sum(scores[:5])
     	df_entries['raw_total'][x]=int(total)
+    df_entries['pos']=df_entries['raw_total'].rank(ascending=1)
     df_entries.to_sql('leaderboard',db,if_exists='replace')
     cur = db.execute('select * from leaderboard order by raw_total asc')
     entries = [dict(Name=row[1],
@@ -148,9 +146,9 @@ def show_entries():
     				Score6=int(row[13]),
     				Birdies=int(row[14]),
     				raw_total=row[15],
-    				position=int(row[0])) for row in cur.fetchall()]
+    				position=int(row[16])) for row in cur.fetchall()]
 
-    return render_template('show_entries.html', entries=entries)
+    return render_template('show_entries.html', entries=entries, scores=scores)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_entry():
@@ -174,9 +172,9 @@ def add_entry():
 			and (request.form.get('golfer6') != '')
 			and (request.form.get('name') != '')
 			and (request.form.get('birdies') != '')):
-			db.execute('insert into inputs (name, golfer1, golfer2, golfer3, golfer4, golfer5, golfer6, paid, birdies) values (?, ?, ?, ?, ?, ?, ?, ?,?)',[request.form.get('name'), request.form.get('golfer1'), request.form.get('golfer2'),request.form.get('golfer3'),request.form.get('golfer4'),request.form.get('golfer5'),request.form.get('golfer6'),'N',request.form.get('birdies')])
-			db.commit()
-			flash('New entry was successfully posted!')
+				db.execute('insert into inputs (name, golfer1, golfer2, golfer3, golfer4, golfer5, golfer6, paid, birdies) values (?, ?, ?, ?, ?, ?, ?, ?,?)',[request.form.get('name'), request.form.get('golfer1'), request.form.get('golfer2'),request.form.get('golfer3'),request.form.get('golfer4'),request.form.get('golfer5'),request.form.get('golfer6'),'N',request.form.get('birdies')])
+				db.commit()
+				flash('New entry was successfully posted!')
 		elif ((request.form.get('golfer1') == request.form.get('golfer2')) or (request.form.get('golfer1') == request.form.get('golfer3')) or (request.form.get('golfer2') == request.form.get('golfer3')) or (request.form.get('golfer4') == request.form.get('golfer5')) or (request.form.get('golfer4') == request.form.get('golfer6')) or (request.form.get('golfer5') == request.form.get('golfer6'))):
 		    flash('You cannot pick two of the same golfers.')
 		elif ((request.form.get('golfer1') == '') or (request.form.get('golfer2') == '') or (request.form.get('golfer3') == '') or (request.form.get('golfer4') == '') or (request.form.get('golfer5') == '') or (request.form.get('golfer6') == '')):
@@ -214,20 +212,27 @@ def admin():
 		paid = request.form.getlist('paid')
 		db = get_db()
 		for x in paid:
-			db.execute("update inputs set paid = 'Y' where name = ?",(x,))
-			db.commit()
+		    db.execute("update inputs set paid = 'Y' where name = ?",(x,))
+		    db.commit()
 		return redirect(url_for('admin'))
 	cur2 = db.execute('select * from inputs')
 	entries = [dict(Name=row[0],
-                    Golfer1=row[1],
-                    Golfer2=row[2],
-                    Golfer3=row[3],
-                    Golfer4=row[4],
-                    Golfer5=row[5],
-                    Golfer6=row[6],
-                    Birdies=int(row[7]),
-                    paid=row[8]) for row in cur2.fetchall()]
+            Golfer1=row[1],
+            Golfer2=row[2],
+            Golfer3=row[3],
+            Golfer4=row[4],
+            Golfer5=row[5],
+            Golfer6=row[6],
+            Birdies=int(row[7]),
+            paid=row[8]) for row in cur2.fetchall()]
 	return render_template('admin.html',unpaid=unpaid, entries=entries)
+
+@app.route('/scoreboard', methods=['GET', 'POST'])
+def scoreboard():
+	db = get_db()
+	cur = db.execute('select * from raw_scores')
+	scores = [dict(pos=row[1],player=row[2],to_par=row[3],thru=row[4]) for row in cur.fetchall()]
+	return render_template('scoreboard.html',scores=scores)
 
 @app.route('/logout')
 def logout():

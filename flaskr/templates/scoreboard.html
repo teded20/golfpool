@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block body %}
+ <div class= 'span5 offset2'> <!--id='wrapper'> -->
+ <table>
+      <thead>
+      <tr>
+      <th class = 'text-center'>POS</th>
+      <th class = 'text-center'>Player</th>
+      <th class = 'text-center'>To Par</th>
+      <th class = 'text-center'>Thru</th>
+      </tr>
+      </thead>
+      {% for score in scores %}
+      <tr class = 'rows'>
+        <td class='r0 text-center' font-weight: bold> {{ score.pos }}</td>
+        <td class='r0 text-center' font-weight: bold> {{ score.player }}</td>
+        <td class='r1 text-center'> {{ score.to_par }}</td>
+        <td class='r2 text-center'> {{ score.thru }} </td>
+      </tr>
+    {% endfor %}
+</table>
+<!--    <div class="container-fluid2">
+      <ul class="sidebar-nav">
+        <li class="sidebar-brand">
+            <a href="#">Leaderboard</a>
+        </li>
+        {% for score in scores %}
+        <li>
+            <a>{{ score.pos }} - {{ score.player }} ({{ score.to_par }})</a>
+        </li>
+        {% endfor %}
+      </ul>
+  </div>  -->
+</div>
+{% endblock %}
