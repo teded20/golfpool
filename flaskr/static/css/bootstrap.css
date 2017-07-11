@@ -4070,6 +4070,8 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .nav {
   padding-left: 0;
   margin-bottom: 0;
+  margin-right: auto;
+  margin-left: auto;
   list-style: none;
 }
 .nav > li {
@@ -4262,8 +4264,10 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .navbar {
   position: relative;
   background-color: #000;
-  min-height: 40px;
+  min-height: 20px;
   margin-bottom: 20px;
+  margin-right: auto;
+  margin-left: auto;
   border: 1px solid transparent;
 }
 @media (min-width: 768px) {
