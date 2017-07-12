@@ -67,49 +67,55 @@ def show_entries():
     lasttime = datetime.strptime(lasttime,'%Y-%m-%d %H:%M:%S.%f')
     nowtime = datetime.today()
     delt = nowtime - lasttime
-    if delt < timedelta(0,5):
-    	url = "http://www.espn.com/golf/leaderboard?tournamentId=2727" #3066 - US Open
-    	page = requests.get(url)
-    	soup = BeautifulSoup(page.content,'html.parser')
-    	names = soup.findAll('a',{'class':'full-name'})
-    	thru = soup.findAll('td',{'class':'thru in'})
-    	pos = soup.findAll('td',{'class':'position'})
-    	to_par = soup.findAll('td',{'class':'relativeScore'})
-    	column_headers = ['POS','PLAYER','TO_PAR','THRU']
-    	leaderboard = []
-    	for x in range(0,len(to_par)):
-    		leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
-    	df=pd.DataFrame(leaderboard,columns = column_headers)
-    	df.to_sql('raw_scores',db,if_exists ='replace')
-    	df['POS'] = df['POS'].str.replace('T','')
-        # db.execute('delete from inputs,golfers') # for when starting new tournament
-    	# # Run once to get golfers populated in golfers table
-    	#     top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
-    	#     top20page = requests.get(top20url)
-    	#     top20soup = BeautifulSoup(top20page.content,'html.parser')
-    	#     names = top20soup.findAll('td',{'class':'name'})
-    	#     rankings = []
-    	#     for x in range(0,len(names)):
-    	#         rankings.append([str(names[x].getText()),int(x+1)])
-    	#     rank_dict = dict(rankings)
-    	#     golfers = df.drop(['POS','TO_PAR','THRU'],1)
-    	#     golfers['RANK'] = golfers.PLAYER.map(rank_dict)
-    	#     golfers = golfers.sort_values('RANK',ascending=True)
-    	#     golfers.to_sql('golfers',db,if_exists = 'replace')
-    	#     db.commit()
-    	df['TO_PAR']=df['TO_PAR'].str.replace('E','0')
-    	df = df.convert_objects(convert_numeric=True)
-    	if df.loc[0,'POS'] != df.loc[1,'POS']:
-    	    df.loc[0,'TO_PAR']=df.loc[0,'TO_PAR']-3
-    	if (datetime.today().weekday() > 4 or datetime.today().weekday() < 3):
+    if delt > timedelta(0,5):
+        url = "http://www.espn.com/golf/leaderboard?tournamentId=2715" #3066 - US Open
+        page = requests.get(url)
+        soup = BeautifulSoup(page.content,'html.parser')
+        names = soup.findAll('a',{'class':'full-name'})
+        thru = soup.findAll('td',{'class':'thru in'})
+        pos = soup.findAll('td',{'class':'position'})
+        to_par = soup.findAll('td',{'class':'relativeScore'})
+        column_headers = ['POS','PLAYER','TO_PAR','THRU']
+        leaderboard = []
+        for x in range(0,len(to_par)):
+            leaderboard.append([pos[x].getText(),names[x].getText(),to_par[x].getText(),thru[x].getText()])
+        df=pd.DataFrame(leaderboard,columns = column_headers)
+        df.to_sql('raw_scores',db,if_exists ='replace')
+        df['POS'] = df['POS'].str.replace('T','')
+        
+
+        # db.execute('delete from inputs') # for when starting new tournament
+        # db.execute('delete from golfers')
+        # db.commit()
+        # # Run once to get golfers populated in golfers table
+        # top20url = 'http://www.owgr.com/ranking?pageNo=1&pageSize=300&country=All'
+        # top20page = requests.get(top20url)
+        # top20soup = BeautifulSoup(top20page.content,'html.parser')
+        # names = top20soup.findAll('td',{'class':'name'})
+        # rankings = []
+        # for x in range(0,len(names)):
+        #     rankings.append([str(names[x].getText()),int(x+1)])
+        # rank_dict = dict(rankings)
+        # golfers = df.drop(['POS','TO_PAR','THRU'],1)
+        # golfers['RANK'] = golfers.PLAYER.map(rank_dict)
+        # golfers = golfers.sort_values('RANK',ascending=True)
+        # golfers.to_sql('golfers',db,if_exists = 'replace')
+        # db.commit()
+
+
+        df['TO_PAR']=df['TO_PAR'].str.replace('E','0')
+        df = df.convert_objects(convert_numeric=True)
+        if df.loc[0,'POS'] != df.loc[1,'POS']:
+            df.loc[0,'TO_PAR']=df.loc[0,'TO_PAR']-3
+        if (datetime.today().weekday() > 4 or datetime.today().weekday() < 3):
             df_cut = df.sort_values('POS',ascending=False)
             df_cut = df_cut[pd.notnull(df_cut['TO_PAR'])]
             cut_score = int(df_cut.iloc[0]['TO_PAR'] + 10)
             df['TO_PAR'] = df['TO_PAR'].fillna(cut_score)
-    	df = df.drop(['POS','THRU'],1)
-    	df.to_sql('scores',db,if_exists ='replace')
-    	db.execute('update datetime set last_run = ?',(datetime.today(),))
-    	db.commit()
+        df = df.drop(['POS','THRU'],1)
+        df.to_sql('scores',db,if_exists ='replace')
+        db.execute('update datetime set last_run = ?',(datetime.today(),))
+        db.commit()
     df_scores = pd.read_sql_query('select * from scores',db)
     df_scores['TO_PAR'] = df_scores['TO_PAR'].fillna(max(df_scores.TO_PAR))
     my_dict = dict(zip(df_scores.PLAYER,df_scores.TO_PAR))
@@ -148,7 +154,7 @@ def show_entries():
     				raw_total=row[15],
     				position=int(row[16])) for row in cur.fetchall()]
 
-    return render_template('show_entries.html', entries=entries, scores=scores)
+    return render_template('show_entries.html', entries=entries)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_entry():
