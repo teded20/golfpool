@@ -68,7 +68,7 @@ def show_entries():
     nowtime = datetime.today()
     delt = nowtime - lasttime
     if delt > timedelta(0,5):
-        url = "http://www.espn.com/golf/leaderboard?tournamentId=2715" #3066 - US Open
+        url = "http://www.espn.com/golf/leaderboard?tournamentId=2710" #3066 - US Open
         page = requests.get(url)
         soup = BeautifulSoup(page.content,'html.parser')
         names = soup.findAll('a',{'class':'full-name'})
