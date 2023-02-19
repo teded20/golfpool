@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block body %}
+<div id="page-content-wrapper">
+    {% for message in get_flashed_messages() %}
+        <div class='flash gap-30'>{{ message }}</div>
+    {% endfor %}
+	<input type='text' id='myInput' onkeyup='myFunction()' placeholder='Search for names..' title='Type in a name'>
+	<table id ='myTable'>
+      <tr class = 'header'>
+      	<th class = 'text-center'>Position</th>
+      	<th class = 'text-center'>Name (Birdies)</th>
+      	<th>Golfers</th>
+      	<th class = 'text-center'>Raw Total</th>
+      </tr>
+      {% for entry in entries %}
+      <tr>
+        <td class='r0 text-center' font-weight: bold> {{ entry.position }}</td>
+        <td id = 'name' class='r0' font-weight: bold> {{ entry.Name }} ({{ entry.Birdies }}) </td>
+        <td class='r1'> {{ entry.Golfer1 }} ({{ entry.Score1 }}), {{ entry.Golfer2 }} ({{ entry.Score2 }}), {{ entry.Golfer3 }} ({{ entry.Score3 }}), {{ entry.Golfer4 }} ({{ entry.Score4 }}), {{ entry.Golfer5 }} ({{ entry.Score5 }}), {{ entry.Golfer6 }} ({{ entry.Score6 }})  </td>
+        <td class='r2 text-center'> {{ entry.raw_total }} </td>
+      </tr>
+    {% endfor %}
+    </table>
+</div>
+<script>
+function myFunction() {
+  var input, filter, table, tr, td, i;
+  input = document.getElementById('myInput');
+  filter = input.value.toUpperCase();
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[1];
+    if (td) {
+      if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+</script>
+{% endblock %}
+
+

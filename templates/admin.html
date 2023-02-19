@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block body %}
+<div id="page-content-wrapper">
+    {% for message in get_flashed_messages() %}
+    <div class='flash text-center'>{{ message }}</div>
+    {% endfor %}
+    <h2 class = 'text-center'>ESPN Tournament ID:</h2>
+    <form action="{{ url_for('admin') }}" method=post class="form-group text-center">
+        <dd class = 'form-group'><input type=text name='tid'>
+        <input type="submit" value='Submit'>
+    </form>
+    <h2 class = 'text-center'>Unpaid Entries:</h2>
+  <div align = 'center'>
+  <form action="{{ url_for('admin') }}" method=post>
+    <div class="checkbox">
+    {% for x in unpaid %}
+      <label><input type="checkbox" name='paid' value = '{{ x }}' autocomplete="off"/>{{ x }}</label>
+    {% endfor %}
+    </div>
+    <input type="submit" value='Submit'>
+  </form>
+  </div>
+  <h2 class = 'text-center'>All Entries({{num}}): </h2>
+  <table id='myTable'>
+    <thead>
+    <tr>
+    <th>Name (Birdies)</th>
+    <th>Golfer 1</th>
+    <th>Golfer 2</th>
+    <th>Golfer 3</th>
+    <th>Golfer 4</th>
+    <th>Golfer 5</th>
+    <th>Golfer 6</th>
+    <th>Paid (Y/N)</th>
+    </tr>
+    </thead>
+    {% for entry in entries %}
+    <tr class = 'rows'>
+      <td class='r0 text-center' font-weight: bold> {{ entry.Name }} ({{ entry.Birdies }}) </td>
+      <td>{{ entry.Golfer1 }}</td>
+      <td>{{ entry.Golfer2 }}</td>
+      <td>{{ entry.Golfer3 }}</td>
+      <td>{{ entry.Golfer4 }}</td>
+      <td>{{ entry.Golfer5 }}</td>
+      <td>{{ entry.Golfer6 }}</td>
+      <td>{{ entry.paid }}</td>
+    </tr>
+  {% endfor %}
+  </table>
+</div>
+{% endblock %}

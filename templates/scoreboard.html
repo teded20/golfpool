@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block body %}
+<div id="container" >
+    <div class = 'row'>
+        <div class='col-sm-3'></div>
+        <div class = 'col-sm-6'>
+            <input type='text' id='myInput' onkeyup='myFunction()' placeholder='Search for names..' title='Type in a name' class = 'text-align:center'>
+             <table id = 'myTable'>
+                  <thead>
+                  <tr class = 'header'>
+                  <th>POS</th>
+                  <th>Player</th>
+                  <th>To Par</th>
+                  <th>Thru</th>
+                  <th>Owned By</th>
+                  </tr>
+                  </thead>
+                  {% for score in scores %}
+                  <tr class = 'rows'>
+                    <td class='r0 text-center' font-weight: bold> {{ score.pos }}</td>
+                    <td class='r0 text-center' font-weight: bold> {{ score.player }}</td>
+                    <td class='r1 text-center'> {{ score.to_par }}</td>
+                    <td class='r2 text-center'> {{ score.thru }} </td>
+                    <td class='r2 text-center'> {{ score.owned }} </td>
+                  </tr>
+                {% endfor %}
+            </table>
+</div>
+</div>
+</div>
+
+<script>
+function myFunction() {
+  var input, filter, table, tr, td, i;
+  input = document.getElementById('myInput');
+  filter = input.value.toUpperCase();
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[1];
+    if (td) {
+      if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+</script>
+{% endblock %}
